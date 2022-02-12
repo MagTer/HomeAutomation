@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.Functions.Worker.Http;
+using System.Web;
 
 namespace AcControl.Resources
 {
@@ -23,13 +24,13 @@ namespace AcControl.Resources
 
         public TemperatureObject(HttpRequestData req)
         {
-            var query = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
+            var query = HttpUtility.ParseQueryString(req.Url.Query);
             float.TryParse(query["inside"], out IndoorTemp);
             float.TryParse(query["outside"], out OutdoorTemp);
             float.TryParse(query["target"], out RoomTarget);
-            if (RoomTarget == 0) RoomTarget = 21.7f;
-            RoomTargetMin = RoomTarget - 1.2f;
-            RoomTargetMax = RoomTarget + 1.2f;
+            if (RoomTarget == 0) RoomTarget = 22.1f;
+            RoomTargetMin = RoomTarget - 1.1f;
+            RoomTargetMax = RoomTarget + 1.1f;
         }
     }
 }

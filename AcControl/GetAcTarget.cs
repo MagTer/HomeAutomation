@@ -3,6 +3,7 @@ using AcControl.Resources;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace AcControl
 {
@@ -16,21 +17,12 @@ namespace AcControl
         }
 
         [Function("GetAcTarget")]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
         {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
-
             TemperatureObject myTemp = new TemperatureObject(req);
             _logger.LogInformation("Inputs - inside:  " + myTemp.IndoorTemp + " - outside: " + myTemp.OutdoorTemp + " - target: " + myTemp.RoomTarget);
 
-            if (myTemp.IndoorTemp == 0) { 
-                var badResponse = req.CreateResponse(HttpStatusCode.OK);
-                badResponse.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-                badResponse.WriteString("Please pass temperature parameters \"inside\",\"outside\" and \"target\"on the query string");
-                return badResponse;
-            }
-
-            if (myTemp.RoomTarget == 0) myTemp.RoomTarget = 22f;
+            if (myTemp.IndoorTemp == 0) { return CreateHttpResponse(req, false, "Please pass temperature parameters \"inside\",\"outside\" and \"target\"on the query string"); }
 
             TemperatureManager tempManager = new TemperatureManager();
             myTemp = tempManager.GetTempCalculation(_logger, myTemp);
@@ -39,14 +31,20 @@ namespace AcControl
             myTemp = Tibber.GetAdjustedValue(_logger, myTemp);
 
             ForeCastManager SMHI = new ForeCastManager();
-            myTemp = SMHI.GetAdjustedValue(_logger, myTemp);
+            myTemp = await SMHI.GetAdjustedValue(_logger, myTemp);
 
             myTemp = tempManager.GetFinalizedOutput(_logger, myTemp);
 
-            string responseString = "{\"Temperature\":\"" + myTemp.ACTarget + "\"}";
+            return CreateHttpResponse(req, true, myTemp.ACTarget.ToString());
+        }
+
+        private static HttpResponseData CreateHttpResponse(HttpRequestData req, bool isjsonResponseType, string responseData)
+        {
             var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/json; charset=utf-8");
-            response.WriteString(responseString);
+            string contentType = isjsonResponseType ? "text/json; charset=utf-8" : "text/plain; charset=utf-8";
+            if (isjsonResponseType) { responseData = "{\"Temperature\":\"" + responseData + "\"}"; }
+            response.Headers.Add("Content-Type", contentType);
+            response.WriteString(responseData);
             return response;
         }
     }

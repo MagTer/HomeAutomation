@@ -12,6 +12,7 @@ namespace AcControl.Resources
     {
         internal TemperatureObject GetTempCalculation(ILogger log, TemperatureObject myTemp)
         {
+           if (myTemp.RoomTarget == 0) myTemp.RoomTarget = 22f;
             myTemp = GetBaseTemperature(log, myTemp);
             myTemp = GetAdjustedTemperature(log, myTemp);
             return myTemp;
