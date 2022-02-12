@@ -7,3 +7,6 @@ It takes the temperature reading of a indoor and outdoor sensor and calculates a
 It also queries a weather forcasting service to check if it will be windy and adjusts the target slightly.
 
 Sharing it mostly to learn about github and repositories :)
+
+## HomeyScript
+Javascript based scripts to control functions in my Homey. One for reaching out to the above ACControl API and one for checking for stale devices.
